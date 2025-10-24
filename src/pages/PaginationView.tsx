@@ -2,6 +2,7 @@ import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PokemonCard } from '@/components/PokemonCard';
 import { Button } from '@/components/ui/button';
+import { scrollToTop } from '@/lib/utils';
 import { usePokemonList } from '@/services/pokemonApi';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -17,25 +18,26 @@ export function PaginationView() {
     POKEMON_PER_PAGE
   );
 
-  const totalPages = data ? Math.ceil(data.total / POKEMON_PER_PAGE) : 0;
+	const totalPages = data ? Math.ceil(data.total / POKEMON_PER_PAGE) : 0;
+	
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   };
 
   const handlePageClick = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
   };
 
   const getPageNumbers = () => {

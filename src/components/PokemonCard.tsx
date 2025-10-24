@@ -1,23 +1,31 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { formatPokemonId, formatPokemonName } from '@/services/pokemonApi';
-import { Link } from 'react-router-dom';
-import placeholder from '/placeholder.jpg';
+import { cn } from "@/lib/utils";
+import { formatPokemonId, formatPokemonName } from "@/services/pokemonApi";
+import { Link } from "react-router-dom";
+import placeholder from "/placeholder.jpg";
 interface PokemonCardProps {
-  id: number;
-  name: string;
-  imageUrl: string;
+	id: number;
+	name: string;
+	imageUrl: string;
 }
 
 export function PokemonCard({ id, name, imageUrl }: PokemonCardProps) {
-  return (
+	return (
 		<Link to={`/pokemon/${id}`} className="group pointer">
 			<Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
 				<CardContent className="p-6">
-					<div className="aspect-square relative mb-4 bg-gray-50 rounded-lg flex items-center justify-center">
+					<div
+						className={cn(
+							"aspect-square relative mb-4 bg-gray-50 rounded-lg flex items-center justify-center"
+						)}
+					>
 						<img
 							src={imageUrl || placeholder}
 							alt={name}
-							className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+							className={cn(
+								"w-full h-full object-contain transition-transform duration-300 group-hover:scale-110",
+								{ "mix-blend-darken": !imageUrl }
+							)}
 							loading="lazy"
 						/>
 					</div>
