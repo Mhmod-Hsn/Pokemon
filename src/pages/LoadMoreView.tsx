@@ -2,7 +2,7 @@ import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PokemonCard } from '@/components/PokemonCard';
 import { Button } from '@/components/ui/button';
-import { usePokemonInfinite } from '@/hooks/usePokemon';
+import { usePokemonInfinite } from '@/services/pokemonApi';
 import { Loader2 } from 'lucide-react';
 
 const POKEMON_PER_LOAD = 20;

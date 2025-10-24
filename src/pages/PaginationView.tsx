@@ -2,7 +2,7 @@ import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PokemonCard } from '@/components/PokemonCard';
 import { Button } from '@/components/ui/button';
-import { usePokemonList } from '@/hooks/usePokemon';
+import { usePokemonList } from '@/services/pokemonApi';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
