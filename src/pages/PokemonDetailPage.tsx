@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
 	formatPokemonId,
 	formatPokemonName,
@@ -10,6 +11,7 @@ import {
 } from "@/services/pokemonApi";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import placeholder from "/placeholder.jpg";
 
 const TYPE_COLORS: Record<string, string> = {
 	normal: "bg-gray-400",
@@ -62,6 +64,8 @@ export function PokemonDetailPage() {
 		);
 	}
 
+	const imgUrl = pokemon?.sprites.other?.["official-artwork"]?.front_default;
+
 	return (
 		<div className="container mx-auto px-4 py-8">
 			<Button variant="ghost" asChild className="mb-6">
@@ -100,11 +104,12 @@ export function PokemonDetailPage() {
 							<div className="shrink-0 mx-auto md:mx-0">
 								<div className="w-64 h-64 bg-gray-50 rounded-lg flex items-center justify-center p-4">
 									<img
-										src={
-											pokemon.sprites.other["official-artwork"].front_default
-										}
+										src={imgUrl || placeholder}
 										alt={pokemon.name}
-										className="w-full h-full object-contain"
+										className={cn("w-full h-full object-contain", {
+											"mix-blend-darken": !imgUrl,
+										})}
+										loading="lazy"
 									/>
 								</div>
 							</div>
