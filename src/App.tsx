@@ -1,5 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { LoadMoreView } from "@/pages/LoadMoreView";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PaginationView } from "@/pages/PaginationView";
 import { PokemonDetailPage } from "@/pages/PokemonDetailPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -24,6 +25,7 @@ function App() {
 						<Route path="/" element={<PaginationView />} />
 						<Route path="/load-more" element={<LoadMoreView />} />
 						<Route path="/pokemon/:id" element={<PokemonDetailPage />} />
+						<Route path="*" element={<NotFoundPage />} />
 					</Routes>
 				</Layout>
 			</BrowserRouter>

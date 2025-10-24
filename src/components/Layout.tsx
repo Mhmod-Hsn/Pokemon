@@ -6,6 +6,17 @@ interface LayoutProps {
 	children: ReactNode;
 }
 
+const LIST_ROUTES = [
+	{
+		path: "/",
+		label: "Page Controls",
+	},
+	{
+		path: "/load-more",
+		label: "Infinite Scroll",
+	}
+]
+
 export function Layout({ children }: LayoutProps) {
 	const location = useLocation();
 	const isDetailPage = location.pathname.startsWith("/pokemon/");
@@ -26,24 +37,15 @@ export function Layout({ children }: LayoutProps) {
 						{/* Navigation - Only show on list pages */}
 						{!isDetailPage && (
 							<nav className="flex gap-2">
-								<Link to="/">
+								{LIST_ROUTES.map((route) => (
 									<Button
-										variant={location.pathname === "/" ? "default" : "ghost"}
+										asChild
+										variant={location.pathname === route.path ? "default" : "ghost"}
 										size="sm"
 									>
-										Page Controls
+										<Link to={route.path}>{route.label}</Link>
 									</Button>
-								</Link>
-								<Link to="/load-more">
-									<Button
-										variant={
-											location.pathname === "/load-more" ? "default" : "ghost"
-										}
-										size="sm"
-									>
-										Infinite Scroll
-									</Button>
-								</Link>
+								))}
 							</nav>
 						)}
 					</div>
