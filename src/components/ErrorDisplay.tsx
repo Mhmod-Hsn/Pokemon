@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Home, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { AlertCircle, Home, RefreshCw } from "lucide-react";
 
 interface ErrorDisplayProps {
   message: string;
