@@ -41,6 +41,30 @@ export async function fetchPokemonDetails(
 }
 
 /**
+ * Search for a Pokemon by name or ID using the API
+ * @param query Pokemon name or ID
+ */
+export async function searchPokemon(query: string): Promise<Pokemon> {
+	// Clean and lowercase the query for the API
+	const cleanQuery = query.trim().toLowerCase();
+	return fetchPokemonDetails(cleanQuery);
+}
+
+/**
+ * Hook to search for a Pokemon by name or ID
+ */
+export function usePokemonSearch(query: string) {
+	return useQuery({
+		queryKey: ["pokemon", "search", query],
+		queryFn: () => searchPokemon(query),
+		enabled: !!query && query.trim().length > 0,
+		staleTime: 10 * 60 * 1000,
+		gcTime: 30 * 60 * 1000,
+		retry: false, // Don't retry on 404
+	});
+}
+
+/**
  * Hook to fetch a single Pokemon's details
  */
 export function usePokemonDetail(id: string | number) {
@@ -131,11 +155,6 @@ export function usePokemonInfinite(limit: number = POKEMON_PER_PAGE) {
 	});
 }
 
-
-
-
-
-
 /**
  * Format Pokemon name for display (capitalize first letter)
  */
@@ -149,4 +168,3 @@ export function formatPokemonName(name: string): string {
 export function formatPokemonId(id: number): string {
   return `#${id.toString().padStart(3, '0')}`;
 }
-

@@ -1,157 +1,255 @@
 import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { LoadingCard } from '@/components/LoadingCard';
 import { PokemonCard } from '@/components/PokemonCard';
-import { Button } from '@/components/ui/button';
-import { scrollToTop } from '@/lib/utils';
-import { usePokemonList } from '@/services/pokemonApi';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { SearchInput } from "@/components/SearchInput";
+import { Button } from "@/components/ui/button";
+import { scrollToTop } from "@/lib/utils";
+import { usePokemonList, usePokemonSearch } from "@/services/pokemonApi";
+import type { Pokemon } from "@/types/pokemon";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 const POKEMON_PER_PAGE = 20;
 
 export function PaginationView() {
-  const [currentPage, setCurrentPage] = useState(1);
+	const [searchParams, setSearchParams] = useSearchParams();
 
-  // Use React Query hook
-  const { data, isLoading, isError, error, refetch } = usePokemonList(
-    currentPage,
-    POKEMON_PER_PAGE
-  );
+	// Get page and search query from URL
+	const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+	const searchQuery = searchParams.get("q") || "";
+	const currentPage = !isNaN(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1;
 
-	const totalPages = data ? Math.ceil(data.total / POKEMON_PER_PAGE) : 0;
-	
+	// Use search hook when searching, otherwise use list hook
+	const searchResult = usePokemonSearch(searchQuery);
+	const listResult = usePokemonList(currentPage, POKEMON_PER_PAGE);
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-      scrollToTop();
-    }
-  };
+	// Choose which result to use
+	const isSearching = !!searchQuery;
+	const { data, isLoading, isError, error, refetch } = isSearching
+		? searchResult
+		: listResult;
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-      scrollToTop();
-    }
-  };
+	// Transform search result to match list format
+	const pokemon =
+		isSearching && data
+			? [data as Pokemon] // Single pokemon from search
+			: !isSearching && data && "pokemon" in data
+			? data.pokemon // List of pokemon
+			: [];
 
-  const handlePageClick = (page: number) => {
-    setCurrentPage(page);
-    scrollToTop();
-  };
+	const totalPages = isSearching
+		? 1
+		: data && "total" in data
+		? Math.ceil(data.total / POKEMON_PER_PAGE)
+		: 0;
 
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const showPages = 5;
-    const halfShow = Math.floor(showPages / 2);
+	// Update URL params
+	const updateParams = (updates: { page?: number; q?: string }) => {
+		const newParams = new URLSearchParams(searchParams);
 
-    let startPage = Math.max(1, currentPage - halfShow);
-    let endPage = Math.min(totalPages, currentPage + halfShow);
+		if (updates.page !== undefined) {
+			newParams.set("page", updates.page.toString());
+		}
+		if (updates.q !== undefined) {
+			if (updates.q) {
+				newParams.set("q", updates.q);
+			} else {
+				newParams.delete("q");
+			}
+		}
 
-    if (currentPage <= halfShow) {
-      endPage = Math.min(showPages, totalPages);
-    }
-    if (currentPage >= totalPages - halfShow) {
-      startPage = Math.max(1, totalPages - showPages + 1);
-    }
+		setSearchParams(newParams);
+		scrollToTop();
+	};
 
-    if (startPage > 1) {
-      pages.push(1);
-      if (startPage > 2) pages.push('...');
-    }
+	const handleSearch = (query: string) => {
+		updateParams({ q: query, page: 1 }); // Reset to page 1 on search
+	};
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
+	const handleClearSearch = () => {
+		updateParams({ q: "", page: 1 });
+	};
 
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push('...');
-      pages.push(totalPages);
-    }
+	const updatePage = (newPage: number) => {
+		updateParams({ page: newPage });
+	};
 
-    return pages;
-  };
+	// Validate page number when total pages is known
+	useEffect(() => {
+		if (!isSearching && totalPages > 0 && currentPage > totalPages) {
+			updatePage(totalPages);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [totalPages, currentPage, isSearching]);
 
-  // Error state
-  if (isError) {
-    return (
-      <ErrorDisplay
-        message={error?.message || 'Failed to load Pokémon data'}
-        onRetry={() => refetch()}
-      />
-    );
-  }
+	const handlePreviousPage = () => {
+		if (currentPage > 1) {
+			updatePage(currentPage - 1);
+		}
+	};
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Pokédex</h1>
-        <p className="text-muted-foreground">
-          Discover and explore Pokemon with page controls
-        </p>
-      </div>
+	const handleNextPage = () => {
+		if (currentPage < totalPages) {
+			updatePage(currentPage + 1);
+		}
+	};
 
-      {/* Pokemon Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-        {isLoading
-          ? Array.from({ length: POKEMON_PER_PAGE }).map((_, index) => (
-              <LoadingCard key={index} />
-            ))
-          : data?.pokemon.map((p) => (
-              <PokemonCard
-                key={p.id}
-                id={p.id}
-                name={p.name}
-                imageUrl={p.sprites.other['official-artwork'].front_default}
-              />
-            ))}
-      </div>
+	const handlePageClick = (page: number) => {
+		updatePage(page);
+	};
 
-      {/* Pagination Controls */}
-      {!isLoading && data && data.pokemon.length > 0 && (
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+	const getPageNumbers = () => {
+		const pages: (number | string)[] = [];
+		const showPages = 5;
+		const halfShow = Math.floor(showPages / 2);
 
-            {getPageNumbers().map((page, index) =>
-              typeof page === 'number' ? (
-                <Button
-                  key={index}
-                  variant={currentPage === page ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => handlePageClick(page)}
-                >
-                  {page}
-                </Button>
-              ) : (
-                <span key={index} className="px-2 text-muted-foreground">
-                  {page}
-                </span>
-              )
-            )}
+		let startPage = Math.max(1, currentPage - halfShow);
+		let endPage = Math.min(totalPages, currentPage + halfShow);
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+		if (currentPage <= halfShow) {
+			endPage = Math.min(showPages, totalPages);
+		}
+		if (currentPage >= totalPages - halfShow) {
+			startPage = Math.max(1, totalPages - showPages + 1);
+		}
 
-          <p className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages} ({POKEMON_PER_PAGE} Pokemon shown)
-          </p>
-        </div>
-      )}
-    </div>
-  );
+		if (startPage > 1) {
+			pages.push(1);
+			if (startPage > 2) pages.push("...");
+		}
+
+		for (let i = startPage; i <= endPage; i++) {
+			pages.push(i);
+		}
+
+		if (endPage < totalPages) {
+			if (endPage < totalPages - 1) pages.push("...");
+			pages.push(totalPages);
+		}
+
+		return pages;
+	};
+
+	// Error state
+	if (isError) {
+		const errorMessage = isSearching
+			? 'Pokémon not found. Try searching by exact name (e.g., "pikachu") or ID (e.g., "25")'
+			: error?.message || "Failed to load Pokémon data";
+
+		return (
+			<div className="container mx-auto px-4 py-8">
+				<div className="mb-8">
+					<h1 className="text-4xl font-bold mb-2">Pokédex</h1>
+					<p className="text-muted-foreground">
+						Discover and explore Pokemon with page controls
+					</p>
+				</div>
+
+				<SearchInput
+					value={searchQuery}
+					onChange={handleSearch}
+					onClear={handleClearSearch}
+					placeholder="Search by exact name or ID..."
+				/>
+
+				<ErrorDisplay
+					message={errorMessage}
+					onRetry={isSearching ? undefined : () => refetch()}
+				/>
+			</div>
+		);
+	}
+
+	return (
+		<div className="container mx-auto px-4 py-8">
+			<div className="mb-8">
+				<h1 className="text-4xl font-bold mb-2">Pokédex</h1>
+				<p className="text-muted-foreground">
+					Discover and explore Pokemon with page controls
+				</p>
+			</div>
+
+			{/* Search Input */}
+			<SearchInput
+				value={searchQuery}
+				onChange={handleSearch}
+				onClear={handleClearSearch}
+				placeholder="Search by exact name or ID..."
+			/>
+
+			{/* Results Info */}
+			{searchQuery && !isLoading && pokemon.length > 0 && (
+				<div className="mb-6 text-center">
+					<p className="text-sm text-muted-foreground">
+						Found <span className="font-semibold text-foreground">1</span>{" "}
+						Pokémon
+					</p>
+				</div>
+			)}
+
+			{/* Pokemon Grid */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
+				{isLoading
+					? Array.from({ length: isSearching ? 1 : POKEMON_PER_PAGE }).map(
+							(_, index) => <LoadingCard key={index} />
+					  )
+					: pokemon.map((p) => (
+							<PokemonCard
+								key={p.id}
+								id={p.id}
+								name={p.name}
+								imageUrl={p.sprites.other["official-artwork"].front_default}
+							/>
+					  ))}
+			</div>
+
+			{/* Pagination Controls - Hide when searching */}
+			{!isLoading && !isSearching && pokemon.length > 0 && totalPages > 1 && (
+				<div className="flex flex-col items-center gap-4">
+					<div className="flex items-center gap-2 flex-wrap justify-center">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handlePreviousPage}
+							disabled={currentPage === 1}
+						>
+							<ChevronLeft className="h-4 w-4" />
+						</Button>
+
+						{getPageNumbers().map((page, index) =>
+							typeof page === "number" ? (
+								<Button
+									key={index}
+									variant={currentPage === page ? "default" : "outline"}
+									size="icon"
+									onClick={() => handlePageClick(page)}
+								>
+									{page}
+								</Button>
+							) : (
+								<span key={index} className="px-2 text-muted-foreground">
+									{page}
+								</span>
+							)
+						)}
+
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleNextPage}
+							disabled={currentPage === totalPages}
+						>
+							<ChevronRight className="h-4 w-4" />
+						</Button>
+					</div>
+
+					<p className="text-sm text-muted-foreground">
+						Page {currentPage} of {totalPages} ({POKEMON_PER_PAGE} Pokemon
+						shown)
+					</p>
+				</div>
+			)}
+		</div>
+	);
 }
